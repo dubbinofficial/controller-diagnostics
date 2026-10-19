@@ -44,64 +44,88 @@
 
     <section class="right">
       <div id="svg-container">
-        <!-- The script will show either the Xbox or PS SVG depending on detected controller -->
-        <svg id="ps-svg" viewBox="0 0 800 450" class="controller-svg" aria-hidden="true">
-          <!-- Simplified DualShock/DualSense artwork with element ids for buttons -->
+        <!-- High-fidelity but lightweight SVG controller artwork. Element IDs map to JS highlighting. -->
+        <!-- PlayStation-style SVG -->
+        <svg id="ps-svg" viewBox="0 0 900 520" class="controller-svg" aria-hidden="true">
+          <defs>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
           <g id="ps-body">
-            <rect x="50" y="60" rx="40" ry="40" width="700" height="330" fill="#111" stroke="#222" />
+            <path d="M90 160c0-40 40-80 90-80h540c50 0 90 40 90 80v120c0 40-40 80-90 80H180c-50 0-90-40-90-80V160z" fill="#0f1720" stroke="#222" stroke-width="3"/>
+            <!-- Left stick -->
+            <g id="ps-left-stick" transform="translate(250 300)">
+              <circle id="ps-ls-base" cx="0" cy="0" r="44" fill="#23272b"/>
+              <circle id="ps-ls-knob" cx="0" cy="0" r="18" fill="#111"/>
+            </g>
+            <!-- Right stick -->
+            <g id="ps-right-stick" transform="translate(520 260)">
+              <circle id="ps-rs-base" cx="0" cy="0" r="44" fill="#23272b"/>
+              <circle id="ps-rs-knob" cx="0" cy="0" r="18" fill="#111"/>
+            </g>
             <!-- D-pad -->
-            <g id="ps-dpad" fill="#444">
-              <rect id="dpad-up" x="120" y="170" width="30" height="50" />
-              <rect id="dpad-down" x="120" y="240" width="30" height="50" />
-              <rect id="dpad-left" x="85" y="205" width="50" height="30" />
-              <rect id="dpad-right" x="155" y="205" width="50" height="30" />
+            <g id="ps-dpad" transform="translate(140 230)">
+              <rect id="ps-dpad-up" x="-14" y="-34" width="28" height="28" rx="6" fill="#3a3f44"/>
+              <rect id="ps-dpad-down" x="-14" y="6" width="28" height="28" rx="6" fill="#3a3f44"/>
+              <rect id="ps-dpad-left" x="-34" y="-14" width="28" height="28" rx="6" fill="#3a3f44"/>
+              <rect id="ps-dpad-right" x="6" y="-14" width="28" height="28" rx="6" fill="#3a3f44"/>
             </g>
             <!-- Face buttons -->
-            <g id="ps-face" fill="#cfcfcf">
-              <circle id="btn-cross" cx="630" cy="205" r="18" />
-              <circle id="btn-circle" cx="665" cy="170" r="18" />
-              <circle id="btn-square" cx="590" cy="170" r="18" />
-              <circle id="btn-triangle" cx="630" cy="135" r="18" />
+            <g id="ps-face" transform="translate(640 220)">
+              <circle id="ps-btn-cross" cx="-20" cy="10" r="16" fill="#d4d7da"/>
+              <circle id="ps-btn-circle" cx="30" cy="-20" r="16" fill="#d4d7da"/>
+              <circle id="ps-btn-square" cx="-60" cy="-20" r="16" fill="#d4d7da"/>
+              <circle id="ps-btn-triangle" cx="-20" cy="-50" r="16" fill="#d4d7da"/>
             </g>
-            <!-- Triggers (visual only) -->
-            <rect id="lt" x="60" y="35" width="120" height="30" rx="6" fill="#222"/>
-            <rect id="rt" x="620" y="35" width="120" height="30" rx="6" fill="#222"/>
-            <!-- Sticks -->
-            <circle id="ls" cx="230" cy="280" r="36" fill="#333" />
-            <circle id="rs" cx="470" cy="280" r="36" fill="#333" />
-            <!-- Center buttons -->
-            <rect id="ps-button" x="370" y="180" width="60" height="20" rx="6" fill="#444"/>
+            <!-- Triggers -->
+            <rect id="ps-l1" x="110" y="90" width="120" height="22" rx="8" fill="#222"/>
+            <rect id="ps-r1" x="670" y="90" width="120" height="22" rx="8" fill="#222"/>
+            <!-- Center button -->
+            <rect id="ps-button" x="420" y="220" width="60" height="18" rx="8" fill="#2d3336"/>
           </g>
         </svg>
 
-        <svg id="xbox-svg" viewBox="0 0 800 450" class="controller-svg" aria-hidden="true">
-          <!-- Simplified Xbox controller with element ids -->
+        <!-- Xbox-style SVG -->
+        <svg id="xbox-svg" viewBox="0 0 900 520" class="controller-svg" aria-hidden="true">
           <g id="xbox-body">
-            <rect x="50" y="60" rx="50" ry="50" width="700" height="330" fill="#0b0b0b" stroke="#111"/>
+            <path d="M90 150c0-45 40-85 95-85h520c55 0 95 40 95 85v140c0 45-40 85-95 85H185c-55 0-95-40-95-85V150z" fill="#0b0f12" stroke="#111" stroke-width="3"/>
+            <!-- Left stick -->
+            <g id="xbox-left-stick" transform="translate(270 320)">
+              <circle id="x-ls-base" cx="0" cy="0" r="44" fill="#2a2e31"/>
+              <circle id="x-ls-knob" cx="0" cy="0" r="18" fill="#0b0f12"/>
+            </g>
+            <!-- Right stick -->
+            <g id="xbox-right-stick" transform="translate(520 260)">
+              <circle id="x-rs-base" cx="0" cy="0" r="44" fill="#2a2e31"/>
+              <circle id="x-rs-knob" cx="0" cy="0" r="18" fill="#0b0f12"/>
+            </g>
             <!-- D-pad -->
-            <g id="xbox-dpad" fill="#555">
-              <rect id="x-dpad-up" x="140" y="165" width="30" height="50" />
-              <rect id="x-dpad-down" x="140" y="245" width="30" height="50" />
-              <rect id="x-dpad-left" x="105" y="205" width="50" height="30" />
-              <rect id="x-dpad-right" x="175" y="205" width="50" height="30" />
+            <g id="xbox-dpad" transform="translate(150 230)">
+              <rect id="x-dpad-up" x="-14" y="-34" width="28" height="28" rx="6" fill="#404448"/>
+              <rect id="x-dpad-down" x="-14" y="6" width="28" height="28" rx="6" fill="#404448"/>
+              <rect id="x-dpad-left" x="-34" y="-14" width="28" height="28" rx="6" fill="#404448"/>
+              <rect id="x-dpad-right" x="6" y="-14" width="28" height="28" rx="6" fill="#404448"/>
             </g>
             <!-- Face buttons -->
-            <g id="xbox-face" fill="#ddd">
-              <circle id="x-btn-a" cx="660" cy="220" r="18" />
-              <circle id="x-btn-b" cx="700" cy="190" r="18" />
-              <circle id="x-btn-x" cx="620" cy="190" r="18" />
-              <circle id="x-btn-y" cx="660" cy="160" r="18" />
+            <g id="xbox-face" transform="translate(660 220)">
+              <circle id="x-btn-a" cx="10" cy="20" r="16" fill="#dfe3e6"/>
+              <circle id="x-btn-b" cx="50" cy="-10" r="16" fill="#dfe3e6"/>
+              <circle id="x-btn-x" cx="-30" cy="-10" r="16" fill="#dfe3e6"/>
+              <circle id="x-btn-y" cx="10" cy="-40" r="16" fill="#dfe3e6"/>
             </g>
             <!-- Triggers -->
-            <rect id="x-lt" x="60" y="35" width="120" height="30" rx="8" fill="#222"/>
-            <rect id="x-rt" x="620" y="35" width="120" height="30" rx="8" fill="#222"/>
-            <!-- Sticks -->
-            <circle id="x-ls" cx="250" cy="300" r="36" fill="#333" />
-            <circle id="x-rs" cx="470" cy="260" r="36" fill="#333" />
-            <!-- Center -->
-            <rect id="xbox-button" x="370" y="180" width="60" height="20" rx="8" fill="#444"/>
+            <rect id="x-l1" x="110" y="80" width="120" height="22" rx="8" fill="#222"/>
+            <rect id="x-r1" x="670" y="80" width="120" height="22" rx="8" fill="#222"/>
+            <!-- Center button -->
+            <rect id="xbox-button" x="420" y="220" width="60" height="18" rx="8" fill="#2a2e31"/>
           </g>
         </svg>
+
       </div>
     </section>
   </main>

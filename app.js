@@ -1,5 +1,5 @@
-// Basic controller diagnostics and SVG highlights using Gamepad API + optional WebBluetooth & WebHID.
-// Works on localhost or HTTPS. Best in Chrome/Edge.
+// Enhanced controller visualization + smoothing + mapping integration
+// Branch: gh-pages-visualizer
 
 const gpListEl = document.getElementById('gamepad-list');
 const diag = {
@@ -20,15 +20,22 @@ const xboxSvg = document.getElementById('xbox-svg');
 let activeGamepad = null;
 let raf = null;
 
+// smoothing state for sticks
+const stickState = {
+  ps: { lx:0, ly:0, rx:0, ry:0 },
+  x: { lx:0, ly:0, rx:0, ry:0 }
+};
+const SMOOTHING = 0.18; // light smoothing
+
 window.addEventListener('gamepadconnected', (e) => {
   console.log('gamepadconnected', e.gamepad);
+  activeGamepad = e.gamepad;
+  showControllerSVG(e.gamepad);
   startLoop();
 });
 window.addEventListener('gamepaddisconnected', (e) => {
   console.log('gamepaddisconnected', e.gamepad);
-  if (activeGamepad && activeGamepad.index === e.gamepad.index) {
-    activeGamepad = null;
-  }
+  if (activeGamepad && activeGamepad.index === e.gamepad.index) activeGamepad = null;
   updateList();
 });
 
@@ -53,27 +60,21 @@ function updateList(){
 }
 
 function startLoop(){
-  if (!raf) {
-    raf = requestAnimationFrame(loop);
-  }
+  if (!raf) raf = requestAnimationFrame(loop);
 }
-
 function loop(){
   updateList();
   const gps = navigator.getGamepads ? navigator.getGamepads() : [];
   if (activeGamepad === null) {
-    // auto-select first connected
-    for (const gp of gps) {
-      if (gp && gp.connected) { activeGamepad = gp; showControllerSVG(gp); break; }
-    }
+    for (const gp of gps) { if (gp && gp.connected) { activeGamepad = gp; showControllerSVG(gp); break; } }
   }
   if (activeGamepad) {
-    // update from latest gamepad index
     const gp = navigator.getGamepads()[activeGamepad.index];
-    if (gp) {
-      renderGamepad(gp);
-      activeGamepad = gp; // refresh reference
-    }
+    if (gp) { renderGamepad(gp); activeGamepad = gp; }
+  } else {
+    // no active controller: show both SVGs dimmed
+    psSvg.classList.add('inactive');
+    xboxSvg.classList.add('inactive');
   }
   raf = requestAnimationFrame(loop);
 }
@@ -89,159 +90,114 @@ function renderGamepad(gp){
   axesEl.innerHTML = '<strong>Axes</strong><br/>' + gp.axes.map((v,i)=>`[${i}]: ${v.toFixed(3)}`).join('<br/>');
   buttonsEl.innerHTML = '<strong>Buttons</strong><br/>' + gp.buttons.map((b,i)=>`[${i}]: ${b.pressed ? 'P' : '-'} ${b.value.toFixed(3)}`).join('<br/>');
 
-  // Visual highlight mapping
-  if (isPSController(gp)) {
-    showPSHighlight(gp);
-  } else if (isXboxController(gp)) {
-    showXboxHighlight(gp);
-  } else {
-    psSvg.style.display = 'none';
-    xboxSvg.style.display = 'none';
-  }
+  // highlight & animate
+  if (isPSController(gp)) showPSHighlight(gp);
+  else if (isXboxController(gp)) showXboxHighlight(gp);
+  else { psSvg.classList.remove('inactive'); xboxSvg.classList.remove('inactive'); }
 }
 
 function isPSController(gp){
-  const id = gp.id.toLowerCase();
+  const id = (gp.id||'').toLowerCase();
   return id.includes('playstation') || id.includes('dualshock') || id.includes('dualsense') || id.includes('sony');
 }
 function isXboxController(gp){
-  const id = gp.id.toLowerCase();
+  const id = (gp.id||'').toLowerCase();
   return id.includes('xbox') || id.includes('x-box') || id.includes('microsoft');
 }
 
 function showControllerSVG(gp){
-  if (isPSController(gp)) {
-    psSvg.style.display = 'block';
-    xboxSvg.style.display = 'none';
-  } else if (isXboxController(gp)) {
-    xboxSvg.style.display = 'block';
-    psSvg.style.display = 'none';
-  } else {
-    psSvg.style.display = 'none';
-    xboxSvg.style.display = 'none';
-  }
+  // keep both visible, dim inactive one
+  psSvg.classList.remove('inactive');
+  xboxSvg.classList.remove('inactive');
+  if (isPSController(gp)) { psSvg.classList.remove('inactive'); xboxSvg.classList.add('inactive'); }
+  else if (isXboxController(gp)) { xboxSvg.classList.remove('inactive'); psSvg.classList.add('inactive'); }
 }
 
-// PS mapping: Common standard mapping -> indices: 0:cross,1:circle,2:square,3:triangle in some controllers
-function showPSHighlight(gp){
-  // clear highlights
-  psSvg.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-  // index mapping is device-dependent; try common mapping:
-  const mapping = {
-    cross: 0, circle: 1, square: 2, triangle: 3,
-    ls: 10, rs: 11, dpadUp:12, dpadDown:13, dpadLeft:14, dpadRight:15
-  };
-  // highlight face buttons
-  highlightSVG(psSvg, 'btn-cross', gp.buttons[mapping.cross]?.pressed);
-  highlightSVG(psSvg, 'btn-circle', gp.buttons[mapping.circle]?.pressed);
-  highlightSVG(psSvg, 'btn-square', gp.buttons[mapping.square]?.pressed);
-  highlightSVG(psSvg, 'btn-triangle', gp.buttons[mapping.triangle]?.pressed);
-  // dpad
-  highlightSVG(psSvg, 'dpad-up', gp.buttons[mapping.dpadUp]?.pressed);
-  highlightSVG(psSvg, 'dpad-down', gp.buttons[mapping.dpadDown]?.pressed);
-  highlightSVG(psSvg, 'dpad-left', gp.buttons[mapping.dpadLeft]?.pressed);
-  highlightSVG(psSvg, 'dpad-right', gp.buttons[mapping.dpadRight]?.pressed);
-  // sticks show axis position by translation
-  // left stick axes 0,1 ; right stick 2,3 (standard mapping)
-  const lsEl = psSvg.getElementById ? psSvg.getElementById('ls') : psSvg.querySelector('#ls');
-  const rsEl = psSvg.getElementById ? psSvg.getElementById('rs') : psSvg.querySelector('#rs');
-  try {
-    const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0;
-    const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
-    if (lsEl) lsEl.setAttribute('transform', `translate(${lx*8}, ${ly*8})`);
-    if (rsEl) rsEl.setAttribute('transform', `translate(${rx*8}, ${ry*8})`);
-  } catch (e) { /* ignore */ }
+// helper to lerp
+function lerp(a,b,t){ return a + (b-a)*t; }
 
-  // simple rumble demo: if both triggers are pressed strongly, rumble
-  if (gp.vibrationActuator && (gp.buttons[6]?.value > 0.9 || gp.buttons[7]?.value > 0.9)) {
-    try {
-      gp.vibrationActuator.playEffect('dual-rumble', {duration: 100, strongMagnitude: 0.6, weakMagnitude: 0.6});
-    } catch(e){}
+function showPSHighlight(gp){
+  // clear previous pressed classes
+  psSvg.querySelectorAll('.pressed').forEach(el=>el.classList.remove('pressed'));
+  // mapping (most controllers follow standard mapping)
+  const map = { cross:0, circle:1, square:2, triangle:3, l1:4, r1:5, l2:6, r2:7, ls:10, rs:11, dUp:12, dDown:13, dLeft:14, dRight:15 };
+  const pressMap = [ ['ps-btn-cross', map.cross], ['ps-btn-circle', map.circle], ['ps-btn-square', map.square], ['ps-btn-triangle', map.triangle] ];
+  pressMap.forEach(([id,idx])=>{ const b = gp.buttons[idx]; if (b && b.pressed) { const el = psSvg.querySelector('#'+id); if (el) el.classList.add('pressed'); } });
+
+  // dpad
+  [['ps-dpad-up',map.dUp],['ps-dpad-down',map.dDown],['ps-dpad-left',map.dLeft],['ps-dpad-right',map.dRight]].forEach(([id,idx])=>{ const el = psSvg.querySelector('#'+id); if (!el) return; if (gp.buttons[idx]?.pressed) el.classList.add('pressed'); else el.classList.remove('pressed'); });
+
+  // sticks: axes 0,1 left. 2,3 right (standard)
+  const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0, rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
+  const s = stickState.ps;
+  s.lx = lerp(s.lx, lx, SMOOTHING); s.ly = lerp(s.ly, ly, SMOOTHING); s.rx = lerp(s.rx, rx, SMOOTHING); s.ry = lerp(s.ry, ry, SMOOTHING);
+  const lsKnob = psSvg.querySelector('#ps-ls-knob');
+  const rsKnob = psSvg.querySelector('#ps-rs-knob');
+  if (lsKnob) lsKnob.style.transform = `translate(${s.lx*10}px, ${s.ly*10}px)`;
+  if (rsKnob) rsKnob.style.transform = `translate(${s.rx*10}px, ${s.ry*10}px)`;
+
+  // button pressure visualization (scale by value)
+  ['ps-btn-cross','ps-btn-circle','ps-btn-square','ps-btn-triangle'].forEach((id,i)=>{
+    const b = gp.buttons[i]; const el = psSvg.querySelector('#'+id); if (!el||!b) return; const v = b.value||0; el.style.opacity = 0.6 + v*0.4; if (b.pressed) el.classList.add('highlight'); else el.classList.remove('highlight');
+  });
+
+  // triggers: show pressed state on L1/R1
+  const l1 = gp.buttons[4], r1 = gp.buttons[5]; ['ps-l1','ps-r1'].forEach((id, idx)=>{ const b = idx===0?l1:r1; const el = psSvg.querySelector('#'+id); if (!el) return; if (b && b.value>0.05) { el.classList.add('highlight'); } else el.classList.remove('highlight'); });
+
+  // simple rumble demo
+  if (gp.vibrationActuator && ((gp.buttons[6]?.value||0) > 0.9 || (gp.buttons[7]?.value||0) > 0.9)) {
+    try { gp.vibrationActuator.playEffect('dual-rumble', {duration: 120, strongMagnitude: 0.6, weakMagnitude: 0.6}); } catch(e){}
   }
 }
 
 function showXboxHighlight(gp){
-  xboxSvg.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-  const mapping = { a:0, b:1, x:2, y:3, dUp:12, dDown:13, dLeft:14, dRight:15 };
-  highlightSVG(xboxSvg, 'x-btn-a', gp.buttons[mapping.a]?.pressed);
-  highlightSVG(xboxSvg, 'x-btn-b', gp.buttons[mapping.b]?.pressed);
-  highlightSVG(xboxSvg, 'x-btn-x', gp.buttons[mapping.x]?.pressed);
-  highlightSVG(xboxSvg, 'x-btn-y', gp.buttons[mapping.y]?.pressed);
-  highlightSVG(xboxSvg, 'x-dpad-up', gp.buttons[mapping.dUp]?.pressed);
-  highlightSVG(xboxSvg, 'x-dpad-down', gp.buttons[mapping.dDown]?.pressed);
-  highlightSVG(xboxSvg, 'x-dpad-left', gp.buttons[mapping.dLeft]?.pressed);
-  highlightSVG(xboxSvg, 'x-dpad-right', gp.buttons[mapping.dRight]?.pressed);
-  // sticks
-  const lsEl = xboxSvg.getElementById ? xboxSvg.getElementById('x-ls') : xboxSvg.querySelector('#x-ls');
-  const rsEl = xboxSvg.getElementById ? xboxSvg.getElementById('x-rs') : xboxSvg.querySelector('#x-rs');
-  try {
-    const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0;
-    const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
-    if (lsEl) lsEl.setAttribute('transform', `translate(${lx*8}, ${ly*8})`);
-    if (rsEl) rsEl.setAttribute('transform', `translate(${rx*8}, ${ry*8})`);
-  } catch(e){}
+  xboxSvg.querySelectorAll('.pressed').forEach(el=>el.classList.remove('pressed'));
+  const map = { a:0, b:1, x:2, y:3, l1:4, r1:5, l2:6, r2:7, ls:10, rs:11, dUp:12, dDown:13, dLeft:14, dRight:15 };
+  [['x-btn-a',map.a],['x-btn-b',map.b],['x-btn-x',map.x],['x-btn-y',map.y]].forEach(([id,idx])=>{ const b = gp.buttons[idx]; if (b && b.pressed) { const el = xboxSvg.querySelector('#'+id); if (el) el.classList.add('pressed'); } });
+  [['x-dpad-up',map.dUp],['x-dpad-down',map.dDown],['x-dpad-left',map.dLeft],['x-dpad-right',map.dRight]].forEach(([id,idx])=>{ const el = xboxSvg.querySelector('#'+id); if (!el) return; if (gp.buttons[idx]?.pressed) el.classList.add('pressed'); else el.classList.remove('pressed'); });
+
+  const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0, rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
+  const s = stickState.x;
+  s.lx = lerp(s.lx, lx, SMOOTHING); s.ly = lerp(s.ly, ly, SMOOTHING); s.rx = lerp(s.rx, rx, SMOOTHING); s.ry = lerp(s.ry, ry, SMOOTHING);
+  const lsKnob = xboxSvg.querySelector('#x-ls-knob');
+  const rsKnob = xboxSvg.querySelector('#x-rs-knob');
+  if (lsKnob) lsKnob.style.transform = `translate(${s.lx*10}px, ${s.ly*10}px)`;
+  if (rsKnob) rsKnob.style.transform = `translate(${s.rx*10}px, ${s.ry*10}px)`;
+
+  ['x-btn-a','x-btn-b','x-btn-x','x-btn-y'].forEach((id,i)=>{
+    const b = gp.buttons[i]; const el = xboxSvg.querySelector('#'+id); if (!el||!b) return; const v = b.value||0; el.style.opacity = 0.6 + v*0.4; if (b.pressed) el.classList.add('highlight'); else el.classList.remove('highlight');
+  });
 }
 
-function highlightSVG(svgEl, selectorId, condition){
-  try {
-    const el = svgEl.querySelector('#' + selectorId);
-    if (!el) return;
-    if (condition) el.classList.add('highlight'); else el.classList.remove('highlight');
-  } catch(e){}
-}
-
-// --- Optional: Web Bluetooth Battery read (requires controller to expose battery_service) ---
+// Web Bluetooth battery read
 async function requestBluetoothBattery(){
-  if (!navigator.bluetooth) {
-    alert('Web Bluetooth not supported in this browser.');
-    return;
-  }
+  if (!navigator.bluetooth) { alert('Web Bluetooth not supported in this browser.'); return; }
   try {
-    const device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: ['battery_service'] }]
-      // some controllers don't advertise; you may need to select the device from the list or pair at OS level first
-    });
+    const device = await navigator.bluetooth.requestDevice({ filters: [{ services: ['battery_service'] }] });
     const server = await device.gatt.connect();
     const batteryService = await server.getPrimaryService('battery_service');
     const batteryLevel = await batteryService.getCharacteristic('battery_level');
     const value = await batteryLevel.readValue();
     const percent = value.getUint8(0);
     diag.battery.textContent = percent + '% (via Bluetooth)';
-  } catch (err) {
-    console.error('Bluetooth error', err);
-    alert('Could not read battery over Bluetooth: ' + err.message);
-  }
+  } catch (err) { console.error('Bluetooth error', err); alert('Could not read battery over Bluetooth: ' + (err.message||err)); }
 }
 
-// --- Optional: WebHID request and inputreport handler (Chrome/Edge) ---
+// WebHID request
 async function requestHID(){
-  if (!navigator.hid) {
-    alert('WebHID not supported in this browser.');
-    return;
-  }
+  if (!navigator.hid) { alert('WebHID not supported in this browser.'); return; }
   try {
-    const filters = [
-      { vendorId: 0x054C }, // Sony
-      { vendorId: 0x045E }  // Microsoft
-    ];
+    const filters = [{ vendorId: 0x054C }, { vendorId: 0x045E }];
     const devices = await navigator.hid.requestDevice({ filters });
     if (devices.length === 0) return;
-    const dev = devices[0];
-    await dev.open();
-    console.log('HID opened', dev);
+    const dev = devices[0]; await dev.open(); console.log('HID opened', dev);
     dev.addEventListener('inputreport', (ev) => {
-      const { data, reportId } = ev;
-      // Raw bytes from controller; parsing is device-specific.
-      console.log('inputreport', reportId, new Uint8Array(data.buffer));
-      // You can parse feature reports or vendor-specific reports here for advanced diagnostics.
+      const { data, reportId } = ev; console.log('inputreport', reportId, new Uint8Array(data.buffer));
     });
     alert('HID device opened. Check console for reports.');
-  } catch (err) {
-    console.error('HID error', err);
-    alert('Could not open HID: ' + err.message);
-  }
+  } catch (err) { console.error('HID error', err); alert('Could not open HID: ' + (err.message||err)); }
 }
 
-// Start by populating list and loop
+// init
 updateList();
 startLoop();
