@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controller Diagnostics</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Controller Diagnostics</h1>
+    <div class="actions">
+      <button id="btn-request-hid">Request HID (Sony/Microsoft)</button>
+      <button id="btn-request-battery">Request Bluetooth Battery</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="left">
+      <div class="card">
+        <h2>Connected Gamepads</h2>
+        <ul id="gamepad-list"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Diagnostics</h2>
+        <div id="diagnostics">
+          <div>Connected: <span id="diag-connected">—</span></div>
+          <div>ID: <span id="diag-id">—</span></div>
+          <div>Index: <span id="diag-index">—</span></div>
+          <div>Mapping: <span id="diag-mapping">—</span></div>
+          <div>Timestamp: <span id="diag-timestamp">—</span></div>
+          <div>Battery: <span id="diag-battery">—</span></div>
+          <div>Rumble-supported: <span id="diag-rumble">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Axes / Buttons</h2>
+        <div id="axes"></div>
+        <div id="buttons"></div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div id="svg-container">
+        <!-- The script will show either the Xbox or PS SVG depending on detected controller -->
+        <svg id="ps-svg" viewBox="0 0 800 450" class="controller-svg" aria-hidden="true" style="display:none">
+          <!-- Simplified DualShock/DualSense artwork with element ids for buttons -->
+          <g id="ps-body">
+            <rect x="50" y="60" rx="40" ry="40" width="700" height="330" fill="#111" stroke="#222" />
+            <!-- D-pad -->
+            <g id="ps-dpad" fill="#444">
+              <rect id="dpad-up" x="120" y="170" width="30" height="50" />
+              <rect id="dpad-down" x="120" y="240" width="30" height="50" />
+              <rect id="dpad-left" x="85" y="205" width="50" height="30" />
+              <rect id="dpad-right" x="155" y="205" width="50" height="30" />
+            </g>
+            <!-- Face buttons -->
+            <g id="ps-face" fill="#cfcfcf">
+              <circle id="btn-cross" cx="630" cy="205" r="18" />
+              <circle id="btn-circle" cx="665" cy="170" r="18" />
+              <circle id="btn-square" cx="590" cy="170" r="18" />
+              <circle id="btn-triangle" cx="630" cy="135" r="18" />
+            </g>
+            <!-- Triggers (visual only) -->
+            <rect id="lt" x="60" y="35" width="120" height="30" rx="6" fill="#222"/>
+            <rect id="rt" x="620" y="35" width="120" height="30" rx="6" fill="#222"/>
+            <!-- Sticks -->
+            <circle id="ls" cx="230" cy="280" r="36" fill="#333" />
+            <circle id="rs" cx="470" cy="280" r="36" fill="#333" />
+            <!-- Center buttons -->
+            <rect id="ps-button" x="370" y="180" width="60" height="20" rx="6" fill="#444"/>
+          </g>
+        </svg>
+
+        <svg id="xbox-svg" viewBox="0 0 800 450" class="controller-svg" aria-hidden="true" style="display:none">
+          <!-- Simplified Xbox controller with element ids -->
+          <g id="xbox-body">
+            <rect x="50" y="60" rx="50" ry="50" width="700" height="330" fill="#0b0b0b" stroke="#111"/>
+            <!-- D-pad -->
+            <g id="xbox-dpad" fill="#555">
+              <rect id="x-dpad-up" x="140" y="165" width="30" height="50" />
+              <rect id="x-dpad-down" x="140" y="245" width="30" height="50" />
+              <rect id="x-dpad-left" x="105" y="205" width="50" height="30" />
+              <rect id="x-dpad-right" x="175" y="205" width="50" height="30" />
+            </g>
+            <!-- Face buttons -->
+            <g id="xbox-face" fill="#ddd">
+              <circle id="x-btn-a" cx="660" cy="220" r="18" />
+              <circle id="x-btn-b" cx="700" cy="190" r="18" />
+              <circle id="x-btn-x" cx="620" cy="190" r="18" />
+              <circle id="x-btn-y" cx="660" cy="160" r="18" />
+            </g>
+            <!-- Triggers -->
+            <rect id="x-lt" x="60" y="35" width="120" height="30" rx="8" fill="#222"/>
+            <rect id="x-rt" x="620" y="35" width="120" height="30" rx="8" fill="#222"/>
+            <!-- Sticks -->
+            <circle id="x-ls" cx="250" cy="300" r="36" fill="#333" />
+            <circle id="x-rs" cx="470" cy="260" r="36" fill="#333" />
+            <!-- Center -->
+            <rect id="xbox-button" x="370" y="180" width="60" height="20" rx="8" fill="#444"/>
+          </g>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Run on https:// or http://localhost. Best on Chrome/Edge. See console for raw logs.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
