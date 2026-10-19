@@ -13,7 +13,7 @@ main{display:flex;gap:18px;padding:20px;max-width:1200px;margin:16px auto;}
 .left{width:360px;display:flex;flex-direction:column;gap:14px}
 .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 4px 20px rgba(2,6,23,0.6)}
 .right{flex:1;display:flex;align-items:center;justify-content:center}
-.controller-svg{width:100%;max-width:820px;height:auto}
+.controller-svg{width:100%;max-width:920px;height:auto}
 #gamepad-list{list-style:none;padding:0;margin:0;color:var(--muted)}
 #axes, #buttons{margin-top:10px;color:var(--muted);font-family:monospace}
 .highlight{fill:var(--accent) !important; stroke:#fff; stroke-width:1.5px}
